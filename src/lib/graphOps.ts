@@ -24,6 +24,7 @@ export function createEmptyDocument(): GraphDocument {
   const now = new Date().toISOString();
 
   return {
+    schemaVersion: 1,
     id: createId("doc"),
     title: "Local Graph Wiki",
     nodes: [],
@@ -327,13 +328,18 @@ export function updateNodeContent(
   };
 }
 
-export function createAttachmentFromFile(file: File, description?: string): AttachedFile {
+export function createAttachmentFromFile(
+  file: File,
+  description?: string,
+  storageKey = createId("file_bytes"),
+): AttachedFile {
   return {
     id: createId("file"),
     name: file.name,
     mimeType: file.type || "application/octet-stream",
     sizeBytes: file.size,
     createdAt: new Date().toISOString(),
+    storageKey,
     description,
   };
 }

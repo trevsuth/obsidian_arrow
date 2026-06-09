@@ -34,16 +34,16 @@
 
 ## Persistence
 
-- Introduce a storage repository interface so `localStorage` can be swapped later.
-- Add autosave status and last-saved indicators.
-- Add import validation with user-friendly errors.
-- Add versioned document migrations for future schema changes.
-- Add IndexedDB storage for file bytes while keeping current attachment metadata.
+- [x] Introduce a storage repository interface so `localStorage` can be swapped later.
+- [x] Add autosave status and last-saved indicators.
+- [x] Add import validation with user-friendly errors.
+- [x] Add versioned document migrations for future schema changes.
+- [x] Add IndexedDB storage for file bytes while keeping current attachment metadata.
 
 ## Tauri and SQLite preparation
 
 - Keep graph operations pure and UI-agnostic.
-- Create a persistence adapter boundary for browser, Tauri, and future server storage.
+- [x] Create a persistence adapter boundary for browser, Tauri, and future server storage.
 - Design SQLite tables for documents, nodes, relationships, attachments, tags, and labels.
 - Add filesystem attachment handling for Tauri.
 - Add export/import compatibility between browser JSON and SQLite-backed documents.

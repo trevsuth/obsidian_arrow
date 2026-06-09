@@ -6,6 +6,7 @@ import Toolbar from "./components/Toolbar";
 import {
   addNode,
   addRelationship,
+  createAttachmentFromFile,
   createFragmentFromSelection,
   createEmptyDocument,
   createNode,
@@ -20,9 +21,19 @@ import {
   updateRelationship,
   type GraphFragment,
 } from "./lib/graphOps";
-import { exportDocument, importDocument, loadDocument, saveDocument } from "./lib/storage";
+import {
+  deleteAttachmentFile,
+  exportDocument,
+  importDocument,
+  loadAttachmentFile,
+  loadDocument,
+  saveAttachmentFile,
+  saveDocument,
+} from "./lib/storage";
 import { searchNodes } from "./lib/search";
-import type { GraphDocument, GraphNode, GraphRelationship, Selection } from "./types/graph";
+import type { AttachedFile, GraphDocument, GraphNode, GraphRelationship, Selection } from "./types/graph";
+
+type SaveStatus = "saved" | "saving" | "error";
 
 export default function App() {
   const [document, setDocument] = useState<GraphDocument>(() => loadDocument());
@@ -35,11 +46,23 @@ export default function App() {
     past: [],
     future: [],
   });
+  const [saveState, setSaveState] = useState<{ status: SaveStatus; savedAt?: string; error?: string }>({
+    status: "saved",
+  });
   const [query, setQuery] = useState("");
 
   useEffect(() => {
     documentRef.current = document;
-    saveDocument(document);
+    setSaveState((current) => ({ status: "saving", savedAt: current.savedAt }));
+    try {
+      const result = saveDocument(document);
+      setSaveState({ status: "saved", savedAt: result.savedAt });
+    } catch (error) {
+      setSaveState({
+        status: "error",
+        error: error instanceof Error ? error.message : "Could not save document.",
+      });
+    }
   }, [document]);
 
   function pushHistory(snapshot: GraphDocument) {
@@ -276,10 +299,64 @@ export default function App() {
     commitDocument((current) => updateRelationship(current, relationship.id, () => relationship));
   }
 
+  async function handleAddAttachment(nodeId: string, file: File) {
+    const attachment = createAttachmentFromFile(file);
+
+    try {
+      await saveAttachmentFile(file, attachment);
+      commitDocument((current) =>
+        updateNode(current, nodeId, (node) => ({
+          ...node,
+          attachments: [...node.attachments, attachment],
+        })),
+      );
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Could not save attachment file.");
+    }
+  }
+
+  async function handleDownloadAttachment(attachment: AttachedFile) {
+    try {
+      const blob = await loadAttachmentFile(attachment);
+      if (!blob) {
+        window.alert("Attachment bytes are not available for this document.");
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const anchor = window.document.createElement("a");
+      anchor.href = url;
+      anchor.download = attachment.name;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Could not download attachment.");
+    }
+  }
+
+  async function handleDeleteAttachment(nodeId: string, attachment: AttachedFile) {
+    try {
+      await deleteAttachmentFile(attachment);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Could not delete attachment bytes.");
+      return;
+    }
+
+    commitDocument((current) =>
+      updateNode(current, nodeId, (node) => ({
+        ...node,
+        attachments: node.attachments.filter((item) => item.id !== attachment.id),
+      })),
+    );
+  }
+
   return (
     <main className="app-shell">
       <Toolbar
         documentTitle={document.title}
+        saveStatus={saveState.status}
+        lastSavedAt={saveState.savedAt}
+        saveError={saveState.error}
         pendingRelationship={Boolean(pendingRelationshipFromId)}
         canUndo={history.past.length > 0}
         canRedo={history.future.length > 0}
@@ -346,6 +423,9 @@ export default function App() {
           selectedNodeCount={selectedNodeIds.length}
           onUpdateNode={handleUpdateNode}
           onUpdateRelationship={handleUpdateRelationship}
+          onAddAttachment={handleAddAttachment}
+          onDownloadAttachment={handleDownloadAttachment}
+          onDeleteAttachment={handleDeleteAttachment}
         />
       </div>
     </main>

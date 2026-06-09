@@ -1,6 +1,5 @@
-import type { GraphNode, GraphRelationship, NodeContentType } from "../types/graph";
+import type { AttachedFile, GraphNode, GraphRelationship, NodeContentType } from "../types/graph";
 import {
-  createAttachmentFromFile,
   parseListInput,
   stringifyListInput,
   updateNodeContent,
@@ -13,6 +12,9 @@ type InspectorPanelProps = {
   selectedNodeCount: number;
   onUpdateNode: (node: GraphNode) => void;
   onUpdateRelationship: (relationship: GraphRelationship) => void;
+  onAddAttachment: (nodeId: string, file: File) => void;
+  onDownloadAttachment: (attachment: AttachedFile) => void;
+  onDeleteAttachment: (nodeId: string, attachment: AttachedFile) => void;
 };
 
 const contentTypes: NodeContentType[] = ["article", "example", "dataset", "note"];
@@ -40,6 +42,9 @@ export default function InspectorPanel({
   selectedNodeCount,
   onUpdateNode,
   onUpdateRelationship,
+  onAddAttachment,
+  onDownloadAttachment,
+  onDeleteAttachment,
 }: InspectorPanelProps) {
   if (selectedNode) {
     const sourceDataValue =
@@ -126,11 +131,7 @@ export default function InspectorPanel({
                   return;
                 }
 
-                // TODO: Store file bytes with IndexedDB, the browser File API, or Tauri file storage.
-                onUpdateNode({
-                  ...selectedNode,
-                  attachments: [...selectedNode.attachments, createAttachmentFromFile(file)],
-                });
+                onAddAttachment(selectedNode.id, file);
                 event.target.value = "";
               }}
             />
@@ -141,9 +142,19 @@ export default function InspectorPanel({
             <ul className="attachment-list">
               {selectedNode.attachments.map((attachment) => (
                 <li key={attachment.id}>
-                  <strong>{attachment.name}</strong>
-                  <span>{attachment.mimeType}</span>
-                  <span>{attachment.sizeBytes.toLocaleString()} bytes</span>
+                  <div>
+                    <strong>{attachment.name}</strong>
+                    <span>{attachment.mimeType}</span>
+                    <span>{attachment.sizeBytes.toLocaleString()} bytes</span>
+                  </div>
+                  <div className="attachment-actions">
+                    <button type="button" onClick={() => onDownloadAttachment(attachment)}>
+                      Download
+                    </button>
+                    <button type="button" onClick={() => onDeleteAttachment(selectedNode.id, attachment)}>
+                      Remove
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>

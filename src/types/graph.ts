@@ -6,6 +6,7 @@ export type AttachedFile = {
   mimeType: string;
   sizeBytes: number;
   createdAt: string;
+  storageKey?: string;
   description?: string;
 };
 
@@ -45,6 +46,7 @@ export type GraphRelationship = {
 };
 
 export type GraphDocument = {
+  schemaVersion: 1;
   id: string;
   title: string;
   nodes: GraphNode[];

@@ -1,5 +1,8 @@
 type ToolbarProps = {
   documentTitle: string;
+  saveStatus: "saved" | "saving" | "error";
+  lastSavedAt?: string;
+  saveError?: string;
   pendingRelationship: boolean;
   canUndo: boolean;
   canRedo: boolean;
@@ -16,6 +19,9 @@ type ToolbarProps = {
 
 export default function Toolbar({
   documentTitle,
+  saveStatus,
+  lastSavedAt,
+  saveError,
   pendingRelationship,
   canUndo,
   canRedo,
@@ -29,6 +35,15 @@ export default function Toolbar({
   onImport,
   onReset,
 }: ToolbarProps) {
+  const savedLabel =
+    saveStatus === "saving"
+      ? "Saving..."
+      : saveStatus === "error"
+        ? "Save failed"
+        : lastSavedAt
+          ? `Saved ${new Date(lastSavedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
+          : "Saved";
+
   return (
     <header className="toolbar">
       <input
@@ -36,6 +51,9 @@ export default function Toolbar({
         value={documentTitle}
         onChange={(event) => onTitleChange(event.target.value)}
       />
+      <span className={`save-status ${saveStatus}`} title={saveError}>
+        {savedLabel}
+      </span>
       <button type="button" onClick={onAddNode}>
         Add node
       </button>

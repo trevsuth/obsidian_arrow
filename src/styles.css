@@ -124,6 +124,19 @@ select option {
   font-weight: 800;
 }
 
+.save-status {
+  min-width: 5.75rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.save-status.error {
+  color: #ffd7f1;
+}
+
 .file-button {
   position: relative;
   display: inline-flex;
@@ -400,8 +413,27 @@ select option {
 }
 
 .attachment-list li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.15rem;
+}
+
+.attachment-list li > div:first-child {
   display: grid;
   gap: 0.15rem;
+  min-width: 0;
+}
+
+.attachment-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.35rem;
+}
+
+.attachment-actions button {
+  padding: 0.32rem 0.48rem;
+  font-size: 0.72rem;
 }
 
 @media (max-width: 900px) {
