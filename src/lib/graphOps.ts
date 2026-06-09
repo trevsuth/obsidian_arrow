@@ -12,6 +12,22 @@ export type GraphFragment = {
   relationships: GraphRelationship[];
 };
 
+export type RelationshipPreset = {
+  type: string;
+  label: string;
+  style: GraphRelationship["style"];
+};
+
+export const relationshipPresets: RelationshipPreset[] = [
+  { type: "relates_to", label: "Relates to", style: { stroke: "#20d9ff", width: 2 } },
+  { type: "depends_on", label: "Depends on", style: { stroke: "#ffd166", width: 2.5 } },
+  { type: "blocks", label: "Blocks", style: { stroke: "#ff5c8a", width: 3, dashed: true } },
+  { type: "references", label: "References", style: { stroke: "#69f0ae", width: 2, dashed: true } },
+  { type: "contains", label: "Contains", style: { stroke: "#b8a1ff", width: 2.5 } },
+];
+
+export type NodeStylePatch = Partial<GraphNode["style"]>;
+
 export function createId(prefix: string): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return `${prefix}_${crypto.randomUUID()}`;
@@ -62,16 +78,15 @@ export function createNode(
 }
 
 export function createRelationship(fromNodeId: string, toNodeId: string): GraphRelationship {
+  const preset = relationshipPresets[0];
+
   return {
     id: createId("rel"),
     fromNodeId,
     toNodeId,
-    type: "relates_to",
+    type: preset.type,
     properties: {},
-    style: {
-      stroke: "#20d9ff",
-      width: 2,
-    },
+    style: { ...preset.style },
   };
 }
 
@@ -110,6 +125,42 @@ export function moveNode(document: GraphDocument, nodeId: string, x: number, y: 
   return updateNode(document, nodeId, (node) => ({ ...node, x, y }));
 }
 
+export function moveNodes(
+  document: GraphDocument,
+  positions: Record<string, { x: number; y: number }>,
+): GraphDocument {
+  const ids = new Set(Object.keys(positions));
+  if (ids.size === 0) {
+    return document;
+  }
+
+  return touchDocument({
+    ...document,
+    nodes: document.nodes.map((node) => {
+      const position = positions[node.id];
+      return position ? { ...node, x: position.x, y: position.y } : node;
+    }),
+  });
+}
+
+export function updateNodesStyle(
+  document: GraphDocument,
+  nodeIds: string[],
+  patch: NodeStylePatch,
+): GraphDocument {
+  const selectedIds = new Set(nodeIds);
+  if (selectedIds.size === 0) {
+    return document;
+  }
+
+  return touchDocument({
+    ...document,
+    nodes: document.nodes.map((node) =>
+      selectedIds.has(node.id) ? { ...node, style: { ...node.style, ...patch } } : node,
+    ),
+  });
+}
+
 export function addRelationship(
   document: GraphDocument,
   relationship: GraphRelationship,
@@ -146,6 +197,30 @@ export function updateRelationship(
       relationship.id === relationshipId ? updater(relationship) : relationship,
     ),
   });
+}
+
+export function applyRelationshipPreset(
+  relationship: GraphRelationship,
+  presetType: string,
+): GraphRelationship {
+  const preset = relationshipPresets.find((item) => item.type === presetType);
+  if (!preset) {
+    return { ...relationship, type: presetType };
+  }
+
+  return {
+    ...relationship,
+    type: preset.type,
+    style: { ...preset.style },
+  };
+}
+
+export function swapRelationshipDirection(relationship: GraphRelationship): GraphRelationship {
+  return {
+    ...relationship,
+    fromNodeId: relationship.toNodeId,
+    toNodeId: relationship.fromNodeId,
+  };
 }
 
 export function deleteSelection(document: GraphDocument, selection: Selection): GraphDocument {
@@ -301,6 +376,95 @@ export function pasteFragment(
     selection:
       ids.length === 0 ? null : ids.length === 1 ? { kind: "node", id: ids[0] } : { kind: "nodes", ids },
   };
+}
+
+export function duplicateSelection(document: GraphDocument, selection: Selection) {
+  const fragment = createFragmentFromSelection(document, selection);
+  if (!fragment) {
+    return { document, selection };
+  }
+
+  return pasteFragment(document, fragment);
+}
+
+export function layoutSelectedNodes(
+  document: GraphDocument,
+  nodeIds: string[],
+  mode: "grid" | "circle",
+): GraphDocument {
+  const selectedIds = new Set(nodeIds);
+  const nodes = document.nodes.filter((node) => selectedIds.has(node.id));
+  if (nodes.length < 2) {
+    return document;
+  }
+
+  const center = nodes.reduce(
+    (point, node) => ({ x: point.x + node.x / nodes.length, y: point.y + node.y / nodes.length }),
+    { x: 0, y: 0 },
+  );
+  const positions: Record<string, { x: number; y: number }> = {};
+
+  if (mode === "circle") {
+    const radius = Math.max(140, nodes.length * 34);
+    nodes.forEach((node, index) => {
+      const angle = (Math.PI * 2 * index) / nodes.length - Math.PI / 2;
+      positions[node.id] = {
+        x: Math.round(center.x + Math.cos(angle) * radius),
+        y: Math.round(center.y + Math.sin(angle) * radius),
+      };
+    });
+  } else {
+    const columns = Math.ceil(Math.sqrt(nodes.length));
+    const spacingX = 180;
+    const spacingY = 140;
+    const rows = Math.ceil(nodes.length / columns);
+    const startX = center.x - ((columns - 1) * spacingX) / 2;
+    const startY = center.y - ((rows - 1) * spacingY) / 2;
+
+    nodes.forEach((node, index) => {
+      positions[node.id] = {
+        x: Math.round(startX + (index % columns) * spacingX),
+        y: Math.round(startY + Math.floor(index / columns) * spacingY),
+      };
+    });
+  }
+
+  return moveNodes(document, positions);
+}
+
+export function findOpenNodePosition(
+  document: GraphDocument,
+  x: number,
+  y: number,
+  radius = 44,
+): { x: number; y: number } {
+  const spacing = radius * 2 + 42;
+  const collides = (point: { x: number; y: number }) =>
+    document.nodes.some((node) => Math.hypot(node.x - point.x, node.y - point.y) < node.style.radius + radius + 28);
+
+  const origin = { x, y };
+  if (!collides(origin)) {
+    return origin;
+  }
+
+  for (let ring = 1; ring <= 12; ring += 1) {
+    const candidates = [
+      { x: x + spacing * ring, y },
+      { x, y: y + spacing * ring },
+      { x: x - spacing * ring, y },
+      { x, y: y - spacing * ring },
+      { x: x + spacing * ring, y: y + spacing * ring },
+      { x: x - spacing * ring, y: y + spacing * ring },
+      { x: x - spacing * ring, y: y - spacing * ring },
+      { x: x + spacing * ring, y: y - spacing * ring },
+    ];
+    const open = candidates.find((point) => !collides(point));
+    if (open) {
+      return open;
+    }
+  }
+
+  return { x: x + spacing * 13, y };
 }
 
 export function parseListInput(value: string): string[] {

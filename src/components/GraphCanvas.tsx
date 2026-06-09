@@ -16,6 +16,7 @@ type GraphCanvasProps = {
   onSelect: (selection: Selection) => void;
   onToggleNodeSelection: (nodeId: string) => void;
   onMoveNode: (nodeId: string, x: number, y: number) => void;
+  onMoveNodes: (positions: Record<string, { x: number; y: number }>) => void;
   onNodeRelationshipClick: (nodeId: string) => void;
   onCreateLinkedNode: (fromNodeId: string, x: number, y: number) => void;
   onCreateRelationship: (fromNodeId: string, toNodeId: string) => void;
@@ -39,6 +40,8 @@ type DragState = {
   nodeId: string;
   offsetX: number;
   offsetY: number;
+  origin: Point;
+  nodePositions: Record<string, Point>;
 };
 
 type LinkDragState = {
@@ -90,6 +93,7 @@ export default function GraphCanvas({
   onSelect,
   onToggleNodeSelection,
   onMoveNode,
+  onMoveNodes,
   onNodeRelationshipClick,
   onCreateLinkedNode,
   onCreateRelationship,
@@ -127,8 +131,10 @@ export default function GraphCanvas({
   }
 
   function findAlignmentGuides(nodeId: string, point: Point): AlignmentGuides {
+    const draggedIds = dragState ? new Set(Object.keys(dragState.nodePositions)) : new Set([nodeId]);
+
     return document.nodes.reduce<AlignmentGuides>((guides, node) => {
-      if (node.id === nodeId) {
+      if (draggedIds.has(node.id)) {
         return guides;
       }
 
@@ -146,7 +152,20 @@ export default function GraphCanvas({
     }
 
     const point = getCanvasPoint(event);
-    setDragState({ nodeId: node.id, offsetX: point.x - node.x, offsetY: point.y - node.y });
+    const nodeIds = selectedNodeIds.includes(node.id) ? selectedNodeIds : [node.id];
+    const nodePositions = Object.fromEntries(
+      document.nodes
+        .filter((item) => nodeIds.includes(item.id))
+        .map((item) => [item.id, { x: item.x, y: item.y }]),
+    );
+
+    setDragState({
+      nodeId: node.id,
+      offsetX: point.x - node.x,
+      offsetY: point.y - node.y,
+      origin: { x: node.x, y: node.y },
+      nodePositions,
+    });
     onBeginNodeDrag();
     event.currentTarget.setPointerCapture(event.pointerId);
   }
@@ -212,7 +231,21 @@ export default function GraphCanvas({
     };
 
     setAlignmentGuides(guides);
-    onMoveNode(dragState.nodeId, guided.x, guided.y);
+    const deltaX = guided.x - dragState.origin.x;
+    const deltaY = guided.y - dragState.origin.y;
+
+    if (Object.keys(dragState.nodePositions).length > 1) {
+      onMoveNodes(
+        Object.fromEntries(
+          Object.entries(dragState.nodePositions).map(([nodeId, position]) => [
+            nodeId,
+            { x: position.x + deltaX, y: position.y + deltaY },
+          ]),
+        ),
+      );
+    } else {
+      onMoveNode(dragState.nodeId, guided.x, guided.y);
+    }
   }
 
   function findNodeAtPoint(x: number, y: number, excludedNodeId: string): GraphNode | undefined {
@@ -400,7 +433,7 @@ export default function GraphCanvas({
             orient="auto"
             markerUnits="strokeWidth"
           >
-            <path d="M 0 0 L 10 4 L 0 8 z" fill="#20d9ff" />
+            <path d="M 0 0 L 10 4 L 0 8 z" fill="context-stroke" />
           </marker>
         </defs>
         <rect

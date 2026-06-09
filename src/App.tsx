@@ -12,13 +12,19 @@ import {
   createNode,
   createRelationship,
   deleteSelection,
+  duplicateSelection,
+  findOpenNodePosition,
   getSelectedNodeIds,
+  layoutSelectedNodes,
   moveNode,
+  moveNodes,
   pasteFragment,
   touchDocument,
   toggleNodeSelection,
   updateNode,
+  updateNodesStyle,
   updateRelationship,
+  type NodeStylePatch,
   type GraphFragment,
 } from "./lib/graphOps";
 import {
@@ -198,10 +204,11 @@ export default function App() {
   const selectedNodeIds = useMemo(() => getSelectedNodeIds(selection), [selection]);
 
   function handleAddNode() {
+    const position = findOpenNodePosition(document, 250 + document.nodes.length * 36, 220 + document.nodes.length * 28);
     const node = createNode({
       title: `Node ${document.nodes.length + 1}`,
-      x: 250 + document.nodes.length * 36,
-      y: 220 + document.nodes.length * 28,
+      x: position.x,
+      y: position.y,
     });
     commitDocument((current) => addNode(current, node));
     setSelection({ kind: "node", id: node.id });
@@ -243,10 +250,11 @@ export default function App() {
   }
 
   function handleCreateLinkedNode(fromNodeId: string, x: number, y: number) {
+    const position = findOpenNodePosition(document, x, y);
     const node = createNode({
       title: `Node ${document.nodes.length + 1}`,
-      x,
-      y,
+      x: position.x,
+      y: position.y,
     });
     const relationship = createRelationship(fromNodeId, node.id);
 
@@ -267,6 +275,25 @@ export default function App() {
     commitDocument((current) => deleteSelection(current, selection));
     setSelection(null);
     setPendingRelationshipFromId(null);
+  }
+
+  function handleDuplicateSelected() {
+    let nextSelection: Selection = null;
+    commitDocument((current) => {
+      const result = duplicateSelection(current, selection);
+      nextSelection = result.selection;
+      return result.document;
+    });
+    setSelection(nextSelection);
+    setPendingRelationshipFromId(null);
+  }
+
+  function handleLayoutSelected(mode: "grid" | "circle") {
+    commitDocument((current) => layoutSelectedNodes(current, selectedNodeIds, mode));
+  }
+
+  function handleUpdateSelectedNodeStyle(patch: NodeStylePatch) {
+    commitDocument((current) => updateNodesStyle(current, selectedNodeIds, patch));
   }
 
   function handleExport() {
@@ -402,6 +429,13 @@ export default function App() {
                 return next;
               })
             }
+            onMoveNodes={(positions) =>
+              setDocument((current) => {
+                const next = moveNodes(current, positions);
+                documentRef.current = next;
+                return next;
+              })
+            }
             onNodeRelationshipClick={handleNodeRelationshipClick}
             onCreateLinkedNode={handleCreateLinkedNode}
             onCreateRelationship={handleCreateRelationship}
@@ -420,12 +454,18 @@ export default function App() {
         <InspectorPanel
           selectedNode={selectedNode}
           selectedRelationship={selectedRelationship}
+          document={document}
+          nodes={document.nodes}
           selectedNodeCount={selectedNodeIds.length}
           onUpdateNode={handleUpdateNode}
           onUpdateRelationship={handleUpdateRelationship}
           onAddAttachment={handleAddAttachment}
           onDownloadAttachment={handleDownloadAttachment}
           onDeleteAttachment={handleDeleteAttachment}
+          onDuplicateSelection={handleDuplicateSelected}
+          onLayoutSelection={handleLayoutSelected}
+          onUpdateSelectedNodeStyle={handleUpdateSelectedNodeStyle}
+          onSelectNode={(nodeId) => setSelection({ kind: "node", id: nodeId })}
         />
       </div>
     </main>

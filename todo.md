@@ -10,19 +10,19 @@
 
 ## Graph editing
 
-- Support editing relationship direction and swapping source/target nodes.
-- Add relationship type presets and color/style mappings.
-- Add grouped operations for multi-selected nodes, such as move, delete, duplicate, and style updates.
-- Add automatic layout options for selected subgraphs.
-- Add collision-aware placement when dragging out new linked nodes.
+- [x] Support editing relationship direction and swapping source/target nodes.
+- [x] Add relationship type presets and color/style mappings.
+- [x] Add grouped operations for multi-selected nodes, such as move, delete, duplicate, and style updates.
+- [x] Add automatic layout options for selected subgraphs.
+- [x] Add collision-aware placement when dragging out new linked nodes.
 
 ## Wiki content
 
-- Replace the simple markdown preview with a proper parser such as `remark` or `markdown-it`.
-- Add backlinks and outbound links for node references.
-- Add a node activity/history panel with updated timestamps.
-- Add templates for articles, examples, datasets, and notes.
-- Add validation and formatting for structured JSON data.
+- [x] Replace the simple markdown preview with a proper parser such as `remark` or `markdown-it`.
+- [x] Add backlinks and outbound links for node references.
+- [x] Add a node activity/history panel with updated timestamps.
+- [x] Add templates for articles, examples, datasets, and notes.
+- [x] Add validation and formatting for structured JSON data.
 
 ## Search and navigation
 

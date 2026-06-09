@@ -337,12 +337,41 @@ select option {
   text-transform: uppercase;
 }
 
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.button-row button {
+  flex: 1 1 7.5rem;
+}
+
 .inspector-panel label input,
 .inspector-panel label textarea,
 .inspector-panel label select {
   color: var(--text);
   font-weight: 400;
   text-transform: none;
+}
+
+.inspector-panel input[type="color"] {
+  min-height: 2.2rem;
+  padding: 0.2rem;
+}
+
+.inspector-panel input[type="range"] {
+  accent-color: var(--line-strong);
+}
+
+.inspector-panel .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.inspector-panel .checkbox-label input {
+  width: auto;
 }
 
 .inspector-panel details {
@@ -381,7 +410,9 @@ select option {
 .markdown-preview h2,
 .markdown-preview h3,
 .markdown-preview p,
-.markdown-preview ul {
+.markdown-preview ul,
+.markdown-preview ol,
+.markdown-preview pre {
   margin-top: 0;
 }
 
@@ -393,6 +424,90 @@ select option {
 .markdown-preview h2 {
   color: #effdff;
   font-size: 1.08rem;
+}
+
+.markdown-preview a {
+  color: #94f4ff;
+  font-weight: 800;
+}
+
+.markdown-preview code,
+.markdown-preview pre {
+  border-radius: 4px;
+  background: rgb(56 232 255 / 0.1);
+  color: #effdff;
+}
+
+.markdown-preview code {
+  padding: 0.08rem 0.22rem;
+}
+
+.markdown-preview pre {
+  overflow: auto;
+  padding: 0.65rem;
+}
+
+.link-lists {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 0.7rem;
+}
+
+.link-lists h3 {
+  margin: 0 0 0.45rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.link-lists ul,
+.activity-list {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.link-lists button {
+  padding: 0.26rem 0.42rem;
+  text-align: left;
+  text-transform: none;
+}
+
+.missing-link {
+  color: #ffd7f1;
+}
+
+.activity-list li {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.activity-list time {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.json-editor {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.json-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.json-editor-footer button {
+  flex-shrink: 0;
+  padding: 0.32rem 0.52rem;
+}
+
+.validation-error {
+  color: #ffd7f1;
+  font-size: 0.84rem;
 }
 
 .json-textarea {

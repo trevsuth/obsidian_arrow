@@ -1,46 +1,48 @@
+import MarkdownIt from "markdown-it";
+import { useMemo } from "react";
+import type { GraphNode } from "../types/graph";
+import { findNodeByTitle } from "../lib/wiki";
+
 type MarkdownEditorProps = {
   markdown: string;
+  nodes: GraphNode[];
   onChange: (markdown: string) => void;
+  onNavigateNode: (nodeId: string) => void;
 };
 
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+const markdownParser = new MarkdownIt({
+  breaks: true,
+  html: false,
+  linkify: true,
+  typographer: true,
+});
+
+function escapeMarkdownLinkLabel(value: string): string {
+  return value.replace(/([\\[\]])/g, "\\$1");
 }
 
-function renderMarkdown(markdown: string): string {
-  const lines = escapeHtml(markdown).split("\n");
-  const html = lines
-    .map((line) => {
-      if (line.startsWith("### ")) {
-        return `<h3>${line.slice(4)}</h3>`;
-      }
-      if (line.startsWith("## ")) {
-        return `<h2>${line.slice(3)}</h2>`;
-      }
-      if (line.startsWith("# ")) {
-        return `<h1>${line.slice(2)}</h1>`;
-      }
-      if (line.startsWith("- ")) {
-        return `<li>${line.slice(2)}</li>`;
-      }
-      if (!line.trim()) {
-        return "";
-      }
-      const withStrong = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-      const withEmphasis = withStrong.replace(/\*(.*?)\*/g, "<em>$1</em>");
-      return `<p>${withEmphasis}</p>`;
-    })
-    .join("");
+function replaceWikiLinks(markdown: string, nodes: GraphNode[]): string {
+  return markdown.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_match, rawTarget: string, rawLabel?: string) => {
+    const targetTitle = rawTarget.trim();
+    const label = (rawLabel ?? targetTitle).trim();
+    const targetNode = findNodeByTitle(nodes, targetTitle);
 
-  return html.replace(/(<li>.*<\/li>)/g, "<ul>$1</ul>");
+    if (!targetNode) {
+      return `**${escapeMarkdownLinkLabel(label)}**`;
+    }
+
+    return `[${escapeMarkdownLinkLabel(label)}](#node:${targetNode.id})`;
+  });
 }
 
-export default function MarkdownEditor({ markdown, onChange }: MarkdownEditorProps) {
+export default function MarkdownEditor({
+  markdown,
+  nodes,
+  onChange,
+  onNavigateNode,
+}: MarkdownEditorProps) {
+  const html = useMemo(() => markdownParser.render(replaceWikiLinks(markdown, nodes)), [markdown, nodes]);
+
   return (
     <div className="markdown-editor">
       <textarea
@@ -50,7 +52,16 @@ export default function MarkdownEditor({ markdown, onChange }: MarkdownEditorPro
       />
       <article
         className="markdown-preview"
-        dangerouslySetInnerHTML={{ __html: renderMarkdown(markdown) }}
+        dangerouslySetInnerHTML={{ __html: html }}
+        onClick={(event) => {
+          const link = (event.target as HTMLElement).closest<HTMLAnchorElement>("a[href^='#node:']");
+          if (!link) {
+            return;
+          }
+
+          event.preventDefault();
+          onNavigateNode(link.hash.replace("#node:", ""));
+        }}
       />
     </div>
   );
