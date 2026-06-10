@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import GraphCanvas from "./components/GraphCanvas";
+import GraphMinimap from "./components/GraphMinimap";
 import InspectorPanel from "./components/InspectorPanel";
 import SearchPanel from "./components/SearchPanel";
 import Toolbar from "./components/Toolbar";
@@ -36,7 +37,7 @@ import {
   saveAttachmentFile,
   saveDocument,
 } from "./lib/storage";
-import { searchNodes } from "./lib/search";
+import { getSearchFacets, searchNodes, type SearchFilters } from "./lib/search";
 import type { AttachedFile, GraphDocument, GraphNode, GraphRelationship, Selection } from "./types/graph";
 
 type SaveStatus = "saved" | "saving" | "error";
@@ -45,6 +46,7 @@ export default function App() {
   const [document, setDocument] = useState<GraphDocument>(() => loadDocument());
   const documentRef = useRef(document);
   const dragStartDocumentRef = useRef<GraphDocument | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [selection, setSelection] = useState<Selection>(null);
   const [pendingRelationshipFromId, setPendingRelationshipFromId] = useState<string | null>(null);
   const [clipboard, setClipboard] = useState<GraphFragment | null>(null);
@@ -56,6 +58,12 @@ export default function App() {
     status: "saved",
   });
   const [query, setQuery] = useState("");
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>({
+    labels: [],
+    tags: [],
+    contentTypes: [],
+  });
+  const [recentNodeIds, setRecentNodeIds] = useState<string[]>([]);
 
   useEffect(() => {
     documentRef.current = document;
@@ -147,6 +155,16 @@ export default function App() {
         ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z" && event.shiftKey) ||
         ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "y");
       const isDelete = event.key === "Delete" || event.key === "Backspace";
+      const isSearch = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k";
+      const isAddNode = event.key.toLowerCase() === "n";
+      const isDuplicate = event.key.toLowerCase() === "d";
+      const isRelationshipMode = event.key.toLowerCase() === "r";
+
+      if (isSearch) {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
 
       if (isUndo) {
         event.preventDefault();
@@ -187,6 +205,24 @@ export default function App() {
         commitDocument((current) => deleteSelection(current, selection));
         setSelection(null);
         setPendingRelationshipFromId(null);
+        return;
+      }
+
+      if (isAddNode) {
+        event.preventDefault();
+        handleAddNode();
+        return;
+      }
+
+      if (isDuplicate) {
+        event.preventDefault();
+        handleDuplicateSelected();
+        return;
+      }
+
+      if (isRelationshipMode) {
+        event.preventDefault();
+        handleStartRelationship();
       }
     }
 
@@ -200,8 +236,25 @@ export default function App() {
     selection?.kind === "relationship"
       ? document.relationships.find((relationship) => relationship.id === selection.id)
       : undefined;
-  const searchResults = useMemo(() => searchNodes(document, query), [document, query]);
+  const searchFacets = useMemo(() => getSearchFacets(document), [document]);
+  const searchResults = useMemo(
+    () => searchNodes(document, query, searchFilters),
+    [document, query, searchFilters],
+  );
+  const highlightedNodeIds = useMemo(() => searchResults.map((result) => result.node.id), [searchResults]);
   const selectedNodeIds = useMemo(() => getSelectedNodeIds(selection), [selection]);
+
+  useEffect(() => {
+    if (selection?.kind !== "node") {
+      return;
+    }
+
+    setRecentNodeIds((current) => [selection.id, ...current.filter((id) => id !== selection.id)].slice(0, 6));
+  }, [selection]);
+
+  function selectNode(nodeId: string) {
+    setSelection({ kind: "node", id: nodeId });
+  }
 
   function handleAddNode() {
     const position = findOpenNodePosition(document, 250 + document.nodes.length * 36, 220 + document.nodes.length * 28);
@@ -406,17 +459,40 @@ export default function App() {
         <section className="canvas-column">
           <SearchPanel
             query={query}
+            filters={searchFilters}
+            facets={searchFacets}
             results={searchResults}
+            inputRef={searchInputRef}
             onQueryChange={setQuery}
-            onSelectNode={(nodeId) => setSelection({ kind: "node", id: nodeId })}
+            onFiltersChange={setSearchFilters}
+            onSelectNode={selectNode}
           />
+          {recentNodeIds.length > 0 && (
+            <nav className="breadcrumbs" aria-label="Recently visited nodes">
+              {recentNodeIds
+                .map((id) => document.nodes.find((node) => node.id === id))
+                .filter((node): node is GraphNode => Boolean(node))
+                .map((node) => (
+                  <button key={node.id} type="button" onClick={() => selectNode(node.id)}>
+                    {node.title}
+                  </button>
+                ))}
+            </nav>
+          )}
           {pendingRelationshipFromId && (
             <div className="mode-banner">Select another node to complete the relationship.</div>
           )}
+          <GraphMinimap
+            document={document}
+            selectedNodeIds={selectedNodeIds}
+            highlightedNodeIds={highlightedNodeIds}
+            onSelectNode={selectNode}
+          />
           <GraphCanvas
             document={document}
             selection={selection}
             selectedNodeIds={selectedNodeIds}
+            highlightedNodeIds={highlightedNodeIds}
             pendingRelationshipFromId={pendingRelationshipFromId}
             onSelect={setSelection}
             onToggleNodeSelection={(nodeId) =>
@@ -465,7 +541,7 @@ export default function App() {
           onDuplicateSelection={handleDuplicateSelected}
           onLayoutSelection={handleLayoutSelected}
           onUpdateSelectedNodeStyle={handleUpdateSelectedNodeStyle}
-          onSelectNode={(nodeId) => setSelection({ kind: "node", id: nodeId })}
+          onSelectNode={selectNode}
         />
       </div>
     </main>

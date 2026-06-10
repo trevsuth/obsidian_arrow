@@ -12,6 +12,7 @@ type GraphCanvasProps = {
   document: GraphDocument;
   selection: Selection;
   selectedNodeIds: string[];
+  highlightedNodeIds: string[];
   pendingRelationshipFromId: string | null;
   onSelect: (selection: Selection) => void;
   onToggleNodeSelection: (nodeId: string) => void;
@@ -89,6 +90,7 @@ export default function GraphCanvas({
   document,
   selection,
   selectedNodeIds,
+  highlightedNodeIds,
   pendingRelationshipFromId,
   onSelect,
   onToggleNodeSelection,
@@ -116,6 +118,7 @@ export default function GraphCanvas({
   const nodesById = useMemo(() => {
     return new Map(document.nodes.map((node) => [node.id, node]));
   }, [document.nodes]);
+  const highlightedNodes = useMemo(() => new Set(highlightedNodeIds), [highlightedNodeIds]);
 
   function getCanvasPoint(event: React.PointerEvent | React.WheelEvent | PointerEvent) {
     const svg = svgRef.current;
@@ -492,6 +495,7 @@ export default function GraphCanvas({
             key={node.id}
             node={node}
             selected={selectedNodeIds.includes(node.id)}
+            highlighted={highlightedNodes.has(node.id)}
             pendingRelationship={pendingRelationshipFromId === node.id}
             onPointerDown={handleNodePointerDown}
             onConnectorPointerDown={handleConnectorPointerDown}

@@ -26,11 +26,11 @@
 
 ## Search and navigation
 
-- Add keyboard shortcuts for search, add node, duplicate, and relationship mode.
-- Add search result highlighting in the graph.
-- Add filtering by labels, tags, and content type.
-- Add a minimap or outline view for large graphs.
-- Add breadcrumb-style navigation for recently visited nodes.
+- [x] Add keyboard shortcuts for search, add node, duplicate, and relationship mode.
+- [x] Add search result highlighting in the graph.
+- [x] Add filtering by labels, tags, and content type.
+- [x] Add a minimap or outline view for large graphs.
+- [x] Add breadcrumb-style navigation for recently visited nodes.
 
 ## Persistence
 
@@ -42,11 +42,11 @@
 
 ## Tauri and SQLite preparation
 
-- Keep graph operations pure and UI-agnostic.
+- [x] Keep graph operations pure and UI-agnostic.
 - [x] Create a persistence adapter boundary for browser, Tauri, and future server storage.
-- Design SQLite tables for documents, nodes, relationships, attachments, tags, and labels.
-- Add filesystem attachment handling for Tauri.
-- Add export/import compatibility between browser JSON and SQLite-backed documents.
+- [x] Design SQLite tables for documents, nodes, relationships, attachments, tags, and labels.
+- [x] Add filesystem attachment handling for Tauri.
+- [x] Add export/import compatibility between browser JSON and SQLite-backed documents.
 
 ## Testing
 

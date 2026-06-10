@@ -33,6 +33,15 @@ export interface StorageRepository {
   deleteAttachment(attachment: AttachedFile): Promise<void>;
 }
 
+export interface AsyncStorageRepository {
+  loadDocument(): Promise<GraphDocument>;
+  saveDocument(document: GraphDocument): Promise<SaveResult>;
+  clearDocument(): Promise<void>;
+  saveAttachment(file: File, attachment: AttachedFile): Promise<void>;
+  loadAttachment(attachment: AttachedFile): Promise<Blob | null>;
+  deleteAttachment(attachment: AttachedFile): Promise<void>;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }

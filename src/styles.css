@@ -257,6 +257,57 @@ select option {
   box-shadow: 0 0 20px rgb(56 232 255 / 0.14);
 }
 
+.search-filters {
+  margin-top: 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-strong);
+  padding: 0.55rem;
+}
+
+.search-filters summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.filter-group > span {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.filter-group em {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid rgb(56 232 255 / 0.2);
+  border-radius: 4px;
+  padding: 0.24rem 0.38rem;
+  color: var(--text);
+  font-size: 0.76rem;
+}
+
+.filter-chip input {
+  width: auto;
+}
+
 .search-results {
   margin-top: 0.45rem;
   border: 1px solid var(--line);
@@ -305,6 +356,64 @@ select option {
   color: #ffd7f1;
   font-weight: 800;
   box-shadow: 0 0 20px var(--accent-soft);
+}
+
+.breadcrumbs {
+  position: absolute;
+  z-index: 2;
+  top: 0.75rem;
+  left: min(25.5rem, calc(100% - 18rem));
+  display: flex;
+  max-width: min(34rem, calc(100% - 27rem));
+  gap: 0.35rem;
+  overflow: auto;
+}
+
+.breadcrumbs button {
+  flex: 0 0 auto;
+  padding: 0.38rem 0.5rem;
+  font-size: 0.72rem;
+  text-transform: none;
+}
+
+.minimap {
+  position: absolute;
+  z-index: 2;
+  right: 0.75rem;
+  top: 0.75rem;
+  width: 13.75rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-strong);
+  padding: 0.35rem;
+  box-shadow: 0 18px 30px rgb(0 0 0 / 0.34);
+}
+
+.minimap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.minimap line {
+  stroke: rgb(56 232 255 / 0.24);
+  stroke-width: 1;
+}
+
+.minimap circle {
+  fill: #38e8ff;
+  cursor: pointer;
+  opacity: 0.74;
+}
+
+.minimap circle.highlighted {
+  fill: #ffd166;
+  opacity: 1;
+}
+
+.minimap circle.selected {
+  fill: #ff3fb7;
+  opacity: 1;
 }
 
 .inspector-panel {
@@ -559,6 +668,11 @@ select option {
   .workspace {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(26rem, 1fr) 26rem;
+  }
+
+  .breadcrumbs,
+  .minimap {
+    display: none;
   }
 
   .inspector-panel {

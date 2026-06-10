@@ -3,6 +3,7 @@ import type { GraphNode } from "../types/graph";
 type NodeViewProps = {
   node: GraphNode;
   selected: boolean;
+  highlighted: boolean;
   pendingRelationship: boolean;
   onPointerDown: (event: React.PointerEvent<SVGGElement>, node: GraphNode) => void;
   onConnectorPointerDown: (event: React.PointerEvent<SVGCircleElement>, node: GraphNode) => void;
@@ -19,6 +20,7 @@ const handleOffsets = [
 export default function NodeView({
   node,
   selected,
+  highlighted,
   pendingRelationship,
   onPointerDown,
   onConnectorPointerDown,
@@ -34,15 +36,15 @@ export default function NodeView({
       <circle
         r={node.style.radius}
         fill={node.style.fill}
-        stroke={selected ? "#ff3fb7" : pendingRelationship ? "#ff3fb7" : node.style.stroke}
-        strokeWidth={selected || pendingRelationship ? 4 : 2}
+        stroke={selected ? "#ff3fb7" : pendingRelationship ? "#ff3fb7" : highlighted ? "#ffd166" : node.style.stroke}
+        strokeWidth={selected || pendingRelationship || highlighted ? 4 : 2}
         filter="url(#holoGlow)"
       />
       <circle
         r={node.style.radius + 9}
         fill="none"
-        stroke={selected || pendingRelationship ? "#ff3fb7" : "#38e8ff"}
-        strokeOpacity={selected || pendingRelationship ? 0.46 : 0.18}
+        stroke={selected || pendingRelationship ? "#ff3fb7" : highlighted ? "#ffd166" : "#38e8ff"}
+        strokeOpacity={selected || pendingRelationship || highlighted ? 0.46 : 0.18}
         strokeWidth="1.5"
         strokeDasharray="5 8"
         pointerEvents="none"
