@@ -13,6 +13,40 @@ npm run dev
 
 Then open the local URL printed by Vite.
 
+Run with Docker
+---------------
+
+Build and serve the production app on port `8080`:
+
+```bash
+docker compose up --build
+```
+
+Then open `http://localhost:8080`. To expose a different host port:
+
+```bash
+ARROWSAPP_PORT=8090 docker compose up --build
+```
+
+For LAN access, open `http://<host-machine-ip>:8080` from another machine on the same network.
+
+The container serves the static app only. Graph data and attachment bytes are still stored per browser profile using `localStorage` and IndexedDB, so use JSON export/import when moving data between machines until a shared backend is added.
+
+Developer shortcuts
+-------------------
+
+This repo includes a `Justfile` for common commands:
+
+```bash
+just install
+just dev
+just build
+just docker-up
+just docker-down
+```
+
+Run `just` to list every available recipe.
+
 Build it
 --------
 
